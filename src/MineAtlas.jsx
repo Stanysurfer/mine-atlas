@@ -407,7 +407,7 @@ function MiningGlobe(){
   const METALS_KEY=_ENV.METALS||null;
   const NEWS_KEY=_ENV.NEWS||null;
   const ALPHA_KEY=_ENV.ALPHA||null;
-  const IS_LIVE=!!(METALS_KEY||NEWS_KEY||ALPHA_KEY);
+  const IS_LIVE=!!(METALS_KEY||NEWS_KEY||ALPHA_KEY||true); // equities always via Yahoo Finance
 
   const METALS_SYM={cu:"XCU",au:"XAU",ag:"XAG",pt:"XPT",fe:"IRON",li:"LITHIUM",ni:"XNI",zn:"XZN",co:"COBALT",al:"XAL",sn:"TIN",u:"URANIUM"};
   const EQ_TICKERS={cu:["BHP.AX","GLEN.L","FCX","AAL.L"],au:["NEM","ABX.TO","AEM","AU"],fe:["BHP.AX","RIO.L","VALE","FMG.AX"],li:["PLS.AX","ALB","SQM","LTR.AX"],ni:["VALE","BHP.AX","S32.AX"],zn:["GLEN.L","TECK.B.TO","S32.AX"],co:["GLEN.L","IVN.TO"],ag:["PAAS","AG","WPM"],u:["CCJ","UEC","BOE.AX"],al:["RIO.L","AA"],cl:["BHP.AX","TECK.B.TO"]};
@@ -420,9 +420,16 @@ function MiningGlobe(){
   },[]);
 
   const fetchEquityQuote=useCallback(async ticker=>{
-    if(!ALPHA_KEY)return null;
-    try{const r=await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${ALPHA_KEY}`);const d=await r.json();const q=d["Global Quote"];if(!q)return null;return{price:parseFloat(q["05. price"])||null,d1:parseFloat((q["10. change percent"]||"0").replace("%",""))||null};}
-    catch{return null;}
+    // Yahoo Finance via corsproxy — no API key, no daily limits
+    // Batch-friendly: can pass comma-separated tickers
+    try{
+      const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}&fields=regularMarketPrice,regularMarketChangePercent,currency,shortName`;
+      const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+      const d=await r.json();
+      const q=d?.quoteResponse?.result?.[0];
+      if(!q)return null;
+      return{price:q.regularMarketPrice||null,d1:q.regularMarketChangePercent||null};
+    }catch{return null;}
   },[]);
 
   const fetchMiningNews=useCallback(async()=>{
@@ -460,8 +467,9 @@ function MiningGlobe(){
   },[]);
 
   useEffect(()=>{
-    if(!IS_LIVE||!ALPHA_KEY)return;
+    if(!IS_LIVE)return;
     const tickers=EQ_TICKERS[selCom]||[];
+    if(!tickers.length)return;
     Promise.all(tickers.map(t=>fetchEquityQuote(t))).then(res=>{const m={};tickers.forEach((t,i)=>{if(res[i])m[t]=res[i];});setLiveEquities(p=>({...p,...m}));});
   },[selCom]);
 
