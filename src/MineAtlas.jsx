@@ -420,15 +420,15 @@ function MiningGlobe(){
   },[]);
 
   const fetchEquityQuote=useCallback(async ticker=>{
-    // Yahoo Finance via corsproxy — no API key, no daily limits
-    // Batch-friendly: can pass comma-separated tickers
     try{
-      const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}&fields=regularMarketPrice,regularMarketChangePercent,currency,shortName`;
-      const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+      const yUrl=`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=2d`;
+      const r=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(yUrl)}`);
       const d=await r.json();
-      const q=d?.quoteResponse?.result?.[0];
-      if(!q)return null;
-      return{price:q.regularMarketPrice||null,d1:q.regularMarketChangePercent||null};
+      const meta=d?.chart?.result?.[0]?.meta;
+      if(!meta?.regularMarketPrice)return null;
+      const prev=meta.chartPreviousClose||meta.previousClose||meta.regularMarketPrice;
+      const d1=prev?((meta.regularMarketPrice-prev)/prev)*100:null;
+      return{price:meta.regularMarketPrice,d1:d1};
     }catch{return null;}
   },[]);
 
