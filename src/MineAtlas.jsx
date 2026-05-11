@@ -427,7 +427,7 @@ function MiningGlobe(){
 
   const fetchMiningNews=useCallback(async()=>{
     if(!NEWS_KEY)return null;
-    try{const r=await fetch(`https://newsdata.io/api/1/news?apikey=${NEWS_KEY}&q=mining+copper+gold+lithium&language=en&category=business&size=10`);const d=await r.json();if(d.status!=="success")return null;
+    try{const r=await fetch(`https://newsdata.io/api/1/latest?apikey=${NEWS_KEY}&q=mining+copper+gold+lithium&language=en&category=business&size=10`);const d=await r.json();if(d.status!=="success")return null;
     const tagText=t=>{const s=t.toLowerCase();const tags=[];if(s.includes("copper")||s.includes("bhp"))tags.push("Cu");if(s.includes("gold")||s.includes("newmont"))tags.push("Au");if(s.includes("lithium"))tags.push("Li");if(s.includes("iron ore")||s.includes("vale"))tags.push("Fe");if(s.includes("nickel"))tags.push("Ni");if(s.includes("bhp"))tags.push("BHP");if(s.includes("rio tinto"))tags.push("RIO");if(s.includes("freeport"))tags.push("FCX");return tags.length?tags:["Mining"];};
     return d.results.map((a,i)=>({id:"live-"+i,src:(a.source_id||"NEWS").slice(0,4).toUpperCase(),sc:"#60a5fa",txt:a.title,tags:tagText(a.title+" "+(a.description||"")),imp:i<3?"high":i<6?"med":"low",mine:null,bps:Math.round((Math.random()-0.5)*40),com:"Copper",metric:"",abstract:(a.description||"").slice(0,120),t:Math.round((Date.now()-new Date(a.pubDate).getTime())/60000)}));}
     catch{return null;}
@@ -3392,7 +3392,7 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
             const comCounts=NEWS_ACTIVE.reduce((a,n)=>{a[n.com]=(a[n.com]||0)+1;return a},{});
             const topComs=Object.entries(comCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
             const maxCom=Math.max(...topComs.map(([,v])=>v));
-            const lead=NEWS[0];
+            const lead=NEWS_ACTIVE[0];
             const mono="'SF Mono',Consolas,monospace";
             const priceSpark=[98,97,99,98,100,101,103,102,104,103,105,106,107,108,107,109,110,112,111,113];
             const spMax=Math.max(...priceSpark),spMin=Math.min(...priceSpark),spRng=spMax-spMin||1;
@@ -3405,8 +3405,8 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <span style={{fontFamily:mono,fontSize:12,fontWeight:700,letterSpacing:"0.1em",color:tc}}>MINING NEWSWIRE</span>
                     <div style={{display:"flex",alignItems:"center",gap:5}}>
-                      <span style={{width:6,height:6,borderRadius:"50%",background:"#ef4444",display:"block",boxShadow:"0 0 6px #ef4444",animation:"pulse 1.5s ease-in-out infinite"}}/>
-                      <span style={{fontFamily:mono,fontSize:10,color:"#ef4444",fontWeight:700}}>LIVE · {liveCount} NEW</span>
+                      <span style={{width:6,height:6,borderRadius:"50%",background:liveNews?"#ef4444":"#6b7280",display:"block",boxShadow:liveNews?"0 0 6px #ef4444":"none",animation:liveNews?"pulse 1.5s ease-in-out infinite":"none"}}/>
+                      <span style={{fontFamily:mono,fontSize:10,color:liveNews?"#ef4444":"#6b7280",fontWeight:700}}>{liveNews?"LIVE":"DEMO"} · {liveCount} {liveNews?"NEW":"ITEMS"}</span>
                     </div>
                   </div>
                   <div style={{display:"flex",gap:3,alignItems:"center"}}>
