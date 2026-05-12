@@ -416,10 +416,20 @@ function MiningGlobe(){
   const EQ_TICKERS={cu:["BHP","GLEN","FCX","AAL"],au:["NEM","ABX","AEM","WPM"],fe:["BHP","RIO","VALE","FMG"],li:["PLS","ALB","SQM","LTR"],ni:["VALE","BHP","S32"],zn:["GLEN","TECK","S32"],co:["GLEN","IVN"],ag:["PAAS","AG","WPM"],u:["CCJ","UEC","BOE"],al:["RIO","AA"],cl:["BHP","TECK"]};
 
   const fetchMetalPrices=useCallback(async ids=>{
-    if(!METALS_KEY)return null;
-    const syms=ids.map(id=>METALS_SYM[id]).filter(Boolean).join(",");
-    try{const r=await fetch(`https://metals-api.com/api/latest?access_key=${METALS_KEY}&base=USD&symbols=${syms}`);if(!r.ok)return null;const d=await r.json();return d.success?d.rates:null;}
-    catch{return null;}
+    // Twelve Data via /api/metals serverless proxy — supports XAU, XAG, XPT, COPPER
+    try{
+      const r=await fetch('/api/metals');
+      if(!r.ok)return null;
+      const d=await r.json();
+      const rates={};
+      // Gold, Silver, Platinum — direct USD/oz
+      if(d["XAU/USD"]?.price)rates["XAU"]=parseFloat(d["XAU/USD"].price);
+      if(d["XAG/USD"]?.price)rates["XAG"]=parseFloat(d["XAG/USD"].price);
+      if(d["XPT/USD"]?.price)rates["XPT"]=parseFloat(d["XPT/USD"].price);
+      // Copper — Twelve Data gives USD/lb, convert to USD/t (×2204.62)
+      if(d["COPPER/USD"]?.price)rates["XCU"]=parseFloat(d["COPPER/USD"].price)*2204.62;
+      return Object.keys(rates).length>0?rates:null;
+    }catch{return null;}
   },[]);
 
   const fetchEquityQuote=useCallback(async ticker=>{
