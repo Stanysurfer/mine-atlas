@@ -407,10 +407,11 @@ function MiningGlobe(){
   const METALS_KEY=_ENV.METALS||null;
   const NEWS_KEY=_ENV.NEWS||null;
   const ALPHA_KEY=_ENV.ALPHA||null;
-  const IS_LIVE=!!(METALS_KEY||NEWS_KEY||ALPHA_KEY||true); // equities always via Yahoo Finance
+  const IS_LIVE=!!(METALS_KEY||NEWS_KEY||ALPHA_KEY);
+  const EQ_LIVE=true; // equities always available via /api/quote serverless proxy
 
   const METALS_SYM={cu:"XCU",au:"XAU",ag:"XAG",pt:"XPT",fe:"IRON",li:"LITHIUM",ni:"XNI",zn:"XZN",co:"COBALT",al:"XAL",sn:"TIN",u:"URANIUM"};
-  const EQ_TICKERS={cu:["BHP.AX","GLEN.L","FCX","AAL.L"],au:["NEM","ABX.TO","AEM","AU"],fe:["BHP.AX","RIO.L","VALE","FMG.AX"],li:["PLS.AX","ALB","SQM","LTR.AX"],ni:["VALE","BHP.AX","S32.AX"],zn:["GLEN.L","TECK.B.TO","S32.AX"],co:["GLEN.L","IVN.TO"],ag:["PAAS","AG","WPM"],u:["CCJ","UEC","BOE.AX"],al:["RIO.L","AA"],cl:["BHP.AX","TECK.B.TO"]};
+  const EQ_TICKERS={cu:["BHP.AX","GLEN.L","FCX","AAL.L"],au:["NEM","ABX.TO","AEM","WPM"],fe:["BHP.AX","RIO.L","VALE","FMG.AX"],li:["PLS.AX","ALB","SQM","LTR.AX"],ni:["VALE","BHP.AX","S32.AX"],zn:["GLEN.L","TECK-B.TO","S32.AX"],co:["GLEN.L","IVN.TO"],ag:["PAAS","AG","WPM"],u:["CCJ","UEC","BOE.AX"],al:["RIO.L","AA"],cl:["BHP.AX","TECK-B.TO"]};
 
   const fetchMetalPrices=useCallback(async ids=>{
     if(!METALS_KEY)return null;
@@ -466,7 +467,7 @@ function MiningGlobe(){
   },[]);
 
   useEffect(()=>{
-    if(!IS_LIVE)return;
+    if(!EQ_LIVE)return;
     const tickers=EQ_TICKERS[selCom]||[];
     if(!tickers.length)return;
     Promise.all(tickers.map(t=>fetchEquityQuote(t))).then(res=>{const m={};tickers.forEach((t,i)=>{if(res[i])m[t]=res[i];});setLiveEquities(p=>({...p,...m}));});
