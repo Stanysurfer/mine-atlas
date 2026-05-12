@@ -411,7 +411,9 @@ function MiningGlobe(){
   const EQ_LIVE=true; // equities always available via /api/quote serverless proxy
 
   const METALS_SYM={cu:"XCU",au:"XAU",ag:"XAG",pt:"XPT",fe:"IRON",li:"LITHIUM",ni:"XNI",zn:"XZN",co:"COBALT",al:"XAL",sn:"TIN",u:"URANIUM"};
-  const EQ_TICKERS={cu:["BHP.AX","GLEN.L","FCX","AAL.L"],au:["NEM","ABX.TO","AEM","WPM"],fe:["BHP.AX","RIO.L","VALE","FMG.AX"],li:["PLS.AX","ALB","SQM","LTR.AX"],ni:["VALE","BHP.AX","S32.AX"],zn:["GLEN.L","TECK-B.TO","S32.AX"],co:["GLEN.L","IVN.TO"],ag:["PAAS","AG","WPM"],u:["CCJ","UEC","BOE.AX"],al:["RIO.L","AA"],cl:["BHP.AX","TECK-B.TO"]};
+  // Short tickers match COMMS equity objects; YF_MAP translates to Yahoo Finance symbols
+  const YF_MAP={"BHP":"BHP.AX","GLEN":"GLEN.L","AAL":"AAL.L","RIO":"RIO.L","FMG":"FMG.AX","PLS":"PLS.AX","LTR":"LTR.AX","S32":"S32.AX","ABX":"ABX.TO","IVN":"IVN.TO","TECK":"TECK-B.TO","BOE":"BOE.AX","AMS":"AMS.JO","SSW":"SSW.JO"};
+  const EQ_TICKERS={cu:["BHP","GLEN","FCX","AAL"],au:["NEM","ABX","AEM","WPM"],fe:["BHP","RIO","VALE","FMG"],li:["PLS","ALB","SQM","LTR"],ni:["VALE","BHP","S32"],zn:["GLEN","TECK","S32"],co:["GLEN","IVN"],ag:["PAAS","AG","WPM"],u:["CCJ","UEC","BOE"],al:["RIO","AA"],cl:["BHP","TECK"]};
 
   const fetchMetalPrices=useCallback(async ids=>{
     if(!METALS_KEY)return null;
@@ -422,7 +424,8 @@ function MiningGlobe(){
 
   const fetchEquityQuote=useCallback(async ticker=>{
     try{
-      const r=await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}`);
+      const yfSym=YF_MAP[ticker]||ticker;
+      const r=await fetch(`/api/quote?ticker=${encodeURIComponent(yfSym)}`);
       const d=await r.json();
       const meta=d?.chart?.result?.[0]?.meta;
       if(!meta?.regularMarketPrice)return null;
