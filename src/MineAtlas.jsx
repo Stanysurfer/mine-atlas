@@ -416,18 +416,25 @@ function MiningGlobe(){
   const EQ_TICKERS={cu:["BHP","GLEN","FCX","AAL"],au:["NEM","ABX","AEM","WPM"],fe:["BHP","RIO","VALE","FMG"],li:["PLS","ALB","SQM","LTR"],ni:["VALE","BHP","S32"],zn:["GLEN","TECK","S32"],co:["GLEN","IVN"],ag:["PAAS","AG","WPM"],u:["CCJ","UEC","BOE"],al:["RIO","AA"],cl:["BHP","TECK"]};
 
   const fetchMetalPrices=useCallback(async ids=>{
-    // Twelve Data via /api/metals serverless proxy — supports XAU, XAG, XPT, COPPER
+    // Yahoo Finance commodity futures via /api/quote — same proxy as equities, no extra key needed
+    // GC=F=Gold(oz), SI=F=Silver(oz), HG=F=Copper(lb→×2204.62=t), PL=F=Platinum(oz)
+    const FUTURES=[
+      {sym:"GC=F",key:"XAU",mult:1},
+      {sym:"SI=F",key:"XAG",mult:1},
+      {sym:"HG=F",key:"XCU",mult:2204.62},
+      {sym:"PL=F",key:"XPT",mult:1},
+    ];
     try{
-      const r=await fetch('/api/metals');
-      if(!r.ok)return null;
-      const d=await r.json();
+      const results=await Promise.all(FUTURES.map(f=>
+        fetch(`/api/quote?ticker=${encodeURIComponent(f.sym)}`).then(r=>r.json()).catch(()=>null)
+      ));
       const rates={};
-      // Gold, Silver, Platinum — direct USD/oz
-      if(d["XAU/USD"]?.price)rates["XAU"]=parseFloat(d["XAU/USD"].price);
-      if(d["XAG/USD"]?.price)rates["XAG"]=parseFloat(d["XAG/USD"].price);
-      if(d["XPT/USD"]?.price)rates["XPT"]=parseFloat(d["XPT/USD"].price);
-      // Copper — Twelve Data gives USD/lb, convert to USD/t (×2204.62)
-      if(d["COPPER/USD"]?.price)rates["XCU"]=parseFloat(d["COPPER/USD"].price)*2204.62;
+      results.forEach((d,i)=>{
+        const meta=d?.chart?.result?.[0]?.meta;
+        if(meta?.regularMarketPrice){
+          rates[FUTURES[i].key]=meta.regularMarketPrice*FUTURES[i].mult;
+        }
+      });
       return Object.keys(rates).length>0?rates:null;
     }catch{return null;}
   },[]);
@@ -2372,7 +2379,7 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
           <button onClick={()=>setCompareView(false)} style={{padding:"5px 12px",height:30,borderRadius:3,border:"1px solid rgba(232,125,62,0.4)",background:"transparent",color:"#e87d3e",fontFamily:"'SF Mono',Consolas,monospace",fontSize:11,fontWeight:700,cursor:"pointer",letterSpacing:"0.06em"}}>← BACK</button>
           <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:10,color:dk?"#6c8198":"#999",letterSpacing:"0.08em"}}>COMPARE MINES</span>
           <span style={{fontSize:16,fontWeight:700,color:tc}}>Side-by-side · {compareList.length} assets</span>
-          <span style={{padding:"2px 8px",borderRadius:3,background:"rgba(232,125,62,0.15)",color:"#e87d3e",fontFamily:"'SF Mono',Consolas,monospace",fontSize:9,fontWeight:700,border:"1px solid rgba(232,125,62,0.3)"}}>● LIVE</span>
+          <span style={{padding:"2px 8px",borderRadius:3,background:apiStatus==="live"?"rgba(232,125,62,0.15)":"rgba(108,129,152,0.15)",color:apiStatus==="live"?"#e87d3e":"#6c8198",fontFamily:"'SF Mono',Consolas,monospace",fontSize:9,fontWeight:700,border:"1px solid "+(apiStatus==="live"?"rgba(232,125,62,0.3)":"rgba(108,129,152,0.3)")}}>{apiStatus==="live"?"● LIVE":"○ SYNTHETIC"}</span>
           <div style={{flex:1}}/>
           <button onClick={()=>addToCompare(null)} style={{padding:"5px 12px",height:30,borderRadius:3,border:dk?"1px solid rgba(110,150,200,0.15)":"1px solid rgba(0,0,0,0.10)",background:"transparent",color:dk?"#6c8198":"#6b7280",fontFamily:"'SF Mono',Consolas,monospace",fontSize:10,cursor:"pointer"}}>+ ADD ASSET</button>
           <button onClick={clearCompare} style={{padding:"5px 12px",height:30,borderRadius:3,border:"none",background:"rgba(215,99,74,0.12)",color:"#d7634a",fontFamily:"'SF Mono',Consolas,monospace",fontSize:10,cursor:"pointer",fontWeight:700}}>CLEAR ALL</button>
@@ -2540,7 +2547,6 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
           }}>
           <div style={{width:isMobile?6:8,height:isMobile?6:8,borderRadius:"50%",background:item.color,flexShrink:0,boxShadow:isActive?"0 0 6px "+item.color:"none",transition:"all 0.2s"}}/>
           <span style={{fontSize:isMobile?"8px":"11px",color:isActive?item.color:tc2,fontWeight:isActive?600:400,letterSpacing:"0.2px",transition:"all 0.2s",whiteSpace:"nowrap"}}>{item.label}</span>
-          {item.total&&<span style={{fontSize:isMobile?"7px":"9px",color:isActive?item.color:tc2,fontFamily:"'SF Mono',Consolas,monospace",opacity:0.5,fontWeight:500,whiteSpace:"nowrap"}}>{item.total}</span>}
           {count>0&&<span style={{fontSize:isMobile?"7px":"9px",color:isActive?item.color:tc2,fontFamily:"'SF Mono',Consolas,monospace",opacity:0.6}}>{count}</span>}
         </div>;
       })}
@@ -3565,7 +3571,7 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
                 {/* 5. EQUITY REACTION */}
                 <div style={{padding:"12px 16px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <span style={{fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:"0.16em",color:dk?"#6c8198":"#4a5568"}}>EQUITY REACTION · LIVE</span>
+                    <span style={{fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:"0.16em",color:dk?"#6c8198":"#4a5568"}}>EQUITY REACTION · {Object.keys(liveEquities).length>0?"LIVE":"SYNTHETIC"}</span>
                     <span style={{width:6,height:6,borderRadius:"50%",background:"#ef4444",display:"block",boxShadow:"0 0 5px #ef4444",animation:"pulse 1.5s ease-in-out infinite"}}/>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"2px 12px"}}>
