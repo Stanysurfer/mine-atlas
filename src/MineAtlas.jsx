@@ -1133,6 +1133,8 @@ function MiningGlobe(){
   const [profileMine,setProfileMine]=useState(null);
   const [profileTab,setProfileTab]=useState("overview");
   const [shareCopied,setShareCopied]=useState(false);
+  const [satOpen,setSatOpen]=useState(false);
+  const [satZoom,setSatZoom]=useState(14);
 
   // Deep links — open profile from ?mine= param on load
   useEffect(()=>{
@@ -1150,7 +1152,7 @@ function MiningGlobe(){
       if(profileMine)window.history.replaceState(null,"",base+"?mine="+mineSlug(profileMine.name));
       else if(window.location.search.includes("mine="))window.history.replaceState(null,"",base);
     }catch(_){}
-    setShareCopied(false);
+    setShareCopied(false);setSatOpen(false);setSatZoom(14);
   },[profileMine]);
   const copyShareLink=useCallback(()=>{
     if(!profileMine)return;
@@ -1764,6 +1766,17 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
     window.addEventListener("pointerup",onPointerUp);
     return()=>{window.removeEventListener("pointermove",onPointerMove);window.removeEventListener("pointerup",onPointerUp)};
   },[]);
+  // computeTargetYawPitch — restore mine-facing rotation from lat/lng.
+  // Derived from latLngToV3 (phi=(90-lat), theta=(lng+180)) with pivot Euler XYZ:
+  //   pitchX = lat (rad), yawY = PI/2 - (lng+180) (rad)
+  // Verified against home constants: lat -25, lng 135 → rotX -0.4363, rotY 2.3562 ✓
+  const computeTargetYawPitch=useCallback((lat,lng)=>{
+    const pitchX=Math.max(-TILT_LIMIT,Math.min(TILT_LIMIT,lat*Math.PI/180));
+    let yawY=Math.PI/2-(lng+180)*Math.PI/180;
+    while(yawY<-Math.PI)yawY+=2*Math.PI;
+    while(yawY>Math.PI)yawY-=2*Math.PI;
+    return{yawY,pitchX};
+  },[]);
   // focusMine - Navigate globe to center a mine
   //
   // Uses computeTargetYawPitch to get exact yaw/pitch,
@@ -1834,7 +1847,7 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
       }
     };
     requestAnimationFrame(tick);
-  },[mapMode]);
+  },[mapMode,computeTargetYawPitch]);
   const onClick=useCallback(e=>{
     if(!camRef.current||!markersRef.current)return;
     const rect=mountRef.current.getBoundingClientRect();
@@ -4207,28 +4220,61 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
         {(()=>{
           const lat=profileMine.lat,lng=profileMine.lng;
           if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>84)return null;
-          const z=13,n=Math.pow(2,z);
-          const xt=(lng+180)/360*n;
-          const latR=lat*Math.PI/180;
-          const yt=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*n;
-          const xi=Math.floor(xt),yi=Math.floor(yt);
-          const cols=[xi-1,xi,xi+1].map(x=>((x%n)+n)%n);
-          const rows=(yt-yi)<0.5?[Math.max(0,yi-1),yi]:[yi,Math.min(n-1,yi+1)];
-          const bh=isMobile?130:200;
-          return <div style={{position:"relative",height:bh,overflow:"hidden",background:"#0a1420",flexShrink:0,borderBottom:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.06)"}}>
+          const tileGrid=(z,nCols,nRows)=>{
+            const n=Math.pow(2,z);
+            const xt=(lng+180)/360*n;
+            const latR=lat*Math.PI/180;
+            const yt=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*n;
+            const xi=Math.floor(xt),yi=Math.floor(yt);
+            const half=c0=>Math.floor(c0/2);
+            const cols=Array.from({length:nCols},(_,i)=>((xi-half(nCols)+i)%n+n)%n);
+            const r0=(yt-yi)<0.5?yi-half(nRows):yi-half(nRows)+((nRows%2===0)?1:0);
+            const rows=Array.from({length:nRows},(_,i)=>Math.max(0,Math.min(n-1,r0+i)));
+            return{cols,rows};
+          };
+          const hero=tileGrid(13,3,2);
+          const bh=isMobile?170:280;
+          const full=tileGrid(satZoom,isMobile?3:5,isMobile?4:3);
+          const mono="'SF Mono',Consolas,monospace";
+          return <>
+          <div style={{position:"relative",height:bh,overflow:"hidden",background:"#0a1420",flexShrink:0,borderBottom:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.06)",cursor:"pointer"}} onClick={()=>setSatOpen(true)} title="Expand satellite view">
             <div style={{position:"absolute",left:0,right:0,top:"50%",transform:"translateY(-50%)",display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
-              {rows.map(y=>cols.map(x=>
-                <img key={z+"-"+x+"-"+y} src={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`} alt="" loading="lazy" draggable={false}
+              {hero.rows.map(y=>hero.cols.map(x=>
+                <img key={"h13-"+x+"-"+y} src={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/${y}/${x}`} alt="" loading="lazy" draggable={false}
                   style={{width:"100%",display:"block",userSelect:"none"}} onError={e=>{e.currentTarget.style.visibility="hidden"}}/>
               ))}
             </div>
             <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(10,20,32,0.35) 0%,rgba(10,20,32,0) 30%,rgba(10,20,32,0) 65%,rgba(10,20,32,0.45) 100%)",pointerEvents:"none"}}/>
             <div style={{position:"absolute",top:8,left:12,display:"flex",alignItems:"center",gap:5,pointerEvents:"none"}}>
               <span style={{width:5,height:5,borderRadius:"50%",background:"#e87d3e",boxShadow:"0 0 5px #e87d3e"}}/>
-              <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:9,fontWeight:700,letterSpacing:"0.12em",color:"rgba(255,255,255,0.9)",textShadow:"0 1px 3px rgba(0,0,0,0.8)"}}>SATELLITE · {lat.toFixed(3)}°, {lng.toFixed(3)}°</span>
+              <span style={{fontFamily:mono,fontSize:9,fontWeight:700,letterSpacing:"0.12em",color:"rgba(255,255,255,0.9)",textShadow:"0 1px 3px rgba(0,0,0,0.8)"}}>SATELLITE · {lat.toFixed(3)}°, {lng.toFixed(3)}°</span>
             </div>
-            <div style={{position:"absolute",bottom:5,right:10,fontFamily:"'SF Mono',Consolas,monospace",fontSize:8,color:"rgba(255,255,255,0.55)",textShadow:"0 1px 2px rgba(0,0,0,0.8)",pointerEvents:"none"}}>Imagery © Esri, Maxar, Earthstar Geographics</div>
-          </div>;
+            <div style={{position:"absolute",top:6,right:10,padding:"4px 10px",borderRadius:3,background:"rgba(10,20,32,0.65)",border:"1px solid rgba(255,255,255,0.2)",fontFamily:mono,fontSize:9,fontWeight:700,letterSpacing:"0.08em",color:"rgba(255,255,255,0.9)",backdropFilter:"blur(4px)"}}>EXPAND ⤢</div>
+            <div style={{position:"absolute",bottom:5,right:10,fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.55)",textShadow:"0 1px 2px rgba(0,0,0,0.8)",pointerEvents:"none"}}>Imagery © Esri, Maxar, Earthstar Geographics</div>
+          </div>
+          {/* Fullscreen satellite viewer */}
+          {satOpen&&<div onClick={()=>setSatOpen(false)} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(5,10,18,0.96)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:isMobile?8:32,backdropFilter:"blur(6px)"}}>
+            <div onClick={e=>e.stopPropagation()} style={{position:"relative",width:"100%",maxWidth:1100,maxHeight:"88vh",overflow:"hidden",borderRadius:6,border:"1px solid rgba(232,125,62,0.3)",background:"#0a1420",boxShadow:"0 20px 60px rgba(0,0,0,0.6)"}}>
+              <div style={{display:"grid",gridTemplateColumns:`repeat(${full.cols.length},1fr)`}}>
+                {full.rows.map(y=>full.cols.map(x=>
+                  <img key={"f"+satZoom+"-"+x+"-"+y} src={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${satZoom}/${y}/${x}`} alt="" draggable={false}
+                    style={{width:"100%",display:"block",userSelect:"none",background:"#0a1420"}} onError={e=>{e.currentTarget.style.visibility="hidden"}}/>
+                ))}
+              </div>
+              <div style={{position:"absolute",top:10,left:14,display:"flex",alignItems:"center",gap:6,pointerEvents:"none"}}>
+                <span style={{width:6,height:6,borderRadius:"50%",background:"#e87d3e",boxShadow:"0 0 6px #e87d3e"}}/>
+                <span style={{fontFamily:mono,fontSize:11,fontWeight:700,letterSpacing:"0.1em",color:"#fff",textShadow:"0 1px 4px rgba(0,0,0,0.9)"}}>{profileMine.name.toUpperCase()} · {lat.toFixed(4)}°, {lng.toFixed(4)}°</span>
+              </div>
+              <div style={{position:"absolute",top:8,right:10,display:"flex",gap:6}}>
+                <button onClick={()=>setSatZoom(z=>Math.max(11,z-1))} style={{width:30,height:30,borderRadius:3,background:"rgba(10,20,32,0.8)",border:"1px solid rgba(255,255,255,0.25)",color:"#fff",fontSize:15,cursor:"pointer",fontFamily:mono}}>−</button>
+                <button onClick={()=>setSatZoom(z=>Math.min(16,z+1))} style={{width:30,height:30,borderRadius:3,background:"rgba(10,20,32,0.8)",border:"1px solid rgba(255,255,255,0.25)",color:"#fff",fontSize:15,cursor:"pointer",fontFamily:mono}}>+</button>
+                <button onClick={()=>setSatOpen(false)} style={{width:30,height:30,borderRadius:3,background:"rgba(232,125,62,0.85)",border:"none",color:"#fff",fontSize:14,cursor:"pointer",fontFamily:mono}}>✕</button>
+              </div>
+              <div style={{position:"absolute",bottom:6,left:14,fontFamily:mono,fontSize:9,color:"rgba(255,255,255,0.6)",textShadow:"0 1px 2px rgba(0,0,0,0.9)",pointerEvents:"none"}}>ZOOM {satZoom} · click outside to close</div>
+              <div style={{position:"absolute",bottom:6,right:10,fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.55)",textShadow:"0 1px 2px rgba(0,0,0,0.9)",pointerEvents:"none"}}>Imagery © Esri, Maxar, Earthstar Geographics</div>
+            </div>
+          </div>}
+          </>;
         })()}
         {/* Mine Header */}
         <div style={{padding:"14px 24px 0",borderBottom:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.06)",background:dk?"#0f1b2c":"#fff",flexShrink:0}}>
