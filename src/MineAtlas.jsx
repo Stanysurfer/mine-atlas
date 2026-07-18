@@ -4216,48 +4216,23 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
           </div>
           <button onClick={()=>{setProfileMine(null);setMapMode("3d");setSelMine(profileMine);setDetail(true);focusMine({name:profileMine.name,lat:profileMine.lat,lng:profileMine.lng})}} style={{background:"linear-gradient(135deg,#e87d3e,#d4652a)",border:"none",color:"#fff",borderRadius:3,padding:"0 14px",height:28,cursor:"pointer",fontFamily:"'SF Mono',Consolas,monospace",fontSize:"11px",fontWeight:700,letterSpacing:"0.06em"}}>FLY TO ON GLOBE →</button>
         </div>
-        {/* Satellite hero — Esri World Imagery tiles centred on the mine */}
-        {(()=>{
+        {/* Fullscreen satellite viewer */}
+        {satOpen&&!isMobile&&(()=>{
           const lat=profileMine.lat,lng=profileMine.lng;
-          if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>84)return null;
-          const tileGrid=(z,nCols,nRows)=>{
-            const n=Math.pow(2,z);
-            const xt=(lng+180)/360*n;
-            const latR=lat*Math.PI/180;
-            const yt=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*n;
-            const xi=Math.floor(xt),yi=Math.floor(yt);
-            const half=c0=>Math.floor(c0/2);
-            const cols=Array.from({length:nCols},(_,i)=>((xi-half(nCols)+i)%n+n)%n);
-            const r0=(yt-yi)<0.5?yi-half(nRows):yi-half(nRows)+((nRows%2===0)?1:0);
-            const rows=Array.from({length:nRows},(_,i)=>Math.max(0,Math.min(n-1,r0+i)));
-            return{cols,rows};
-          };
-          const hero=tileGrid(13,3,2);
-          const bh=isMobile?170:280;
-          const full=tileGrid(satZoom,isMobile?3:5,isMobile?4:3);
+          if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>84){return null;}
+          const n=Math.pow(2,satZoom);
+          const xt=(lng+180)/360*n, latR=lat*Math.PI/180;
+          const yt=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*n;
+          const xi=Math.floor(xt),yi=Math.floor(yt);
+          const nC=5,nR=3;
+          const cols=Array.from({length:nC},(_,i)=>((xi-2+i)%n+n)%n);
+          const rows=Array.from({length:nR},(_,i)=>Math.max(0,Math.min(n-1,yi-1+i)));
           const mono="'SF Mono',Consolas,monospace";
-          return <>
-          <div style={{position:"relative",height:bh,overflow:"hidden",background:"#0a1420",flexShrink:0,borderBottom:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.06)",cursor:"pointer"}} onClick={()=>setSatOpen(true)} title="Expand satellite view">
-            <div style={{position:"absolute",left:0,right:0,top:"50%",transform:"translateY(-50%)",display:"grid",gridTemplateColumns:"repeat(3,1fr)"}}>
-              {hero.rows.map(y=>hero.cols.map(x=>
-                <img key={"h13-"+x+"-"+y} src={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/${y}/${x}`} alt="" loading="lazy" draggable={false}
-                  style={{width:"100%",display:"block",userSelect:"none"}} onError={e=>{e.currentTarget.style.visibility="hidden"}}/>
-              ))}
-            </div>
-            <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(10,20,32,0.35) 0%,rgba(10,20,32,0) 30%,rgba(10,20,32,0) 65%,rgba(10,20,32,0.45) 100%)",pointerEvents:"none"}}/>
-            <div style={{position:"absolute",top:8,left:12,display:"flex",alignItems:"center",gap:5,pointerEvents:"none"}}>
-              <span style={{width:5,height:5,borderRadius:"50%",background:"#e87d3e",boxShadow:"0 0 5px #e87d3e"}}/>
-              <span style={{fontFamily:mono,fontSize:9,fontWeight:700,letterSpacing:"0.12em",color:"rgba(255,255,255,0.9)",textShadow:"0 1px 3px rgba(0,0,0,0.8)"}}>SATELLITE · {lat.toFixed(3)}°, {lng.toFixed(3)}°</span>
-            </div>
-            <div style={{position:"absolute",top:6,right:10,padding:"4px 10px",borderRadius:3,background:"rgba(10,20,32,0.65)",border:"1px solid rgba(255,255,255,0.2)",fontFamily:mono,fontSize:9,fontWeight:700,letterSpacing:"0.08em",color:"rgba(255,255,255,0.9)",backdropFilter:"blur(4px)"}}>EXPAND ⤢</div>
-            <div style={{position:"absolute",bottom:5,right:10,fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.55)",textShadow:"0 1px 2px rgba(0,0,0,0.8)",pointerEvents:"none"}}>Imagery © Esri, Maxar, Earthstar Geographics</div>
-          </div>
-          {/* Fullscreen satellite viewer */}
-          {satOpen&&<div onClick={()=>setSatOpen(false)} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(5,10,18,0.96)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:isMobile?8:32,backdropFilter:"blur(6px)"}}>
+          return <div onClick={()=>setSatOpen(false)} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(5,10,18,0.96)",display:"flex",alignItems:"center",justifyContent:"center",padding:32,backdropFilter:"blur(6px)"}}>
             <div onClick={e=>e.stopPropagation()} style={{position:"relative",width:"100%",maxWidth:1100,maxHeight:"88vh",overflow:"hidden",borderRadius:6,border:"1px solid rgba(232,125,62,0.3)",background:"#0a1420",boxShadow:"0 20px 60px rgba(0,0,0,0.6)"}}>
-              <div style={{display:"grid",gridTemplateColumns:`repeat(${full.cols.length},1fr)`}}>
-                {full.rows.map(y=>full.cols.map(x=>
-                  <img key={"f"+satZoom+"-"+x+"-"+y} src={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${satZoom}/${y}/${x}`} alt="" draggable={false}
+              <div style={{display:"grid",gridTemplateColumns:`repeat(${nC},1fr)`}}>
+                {rows.map(y=>cols.map(x=>
+                  <img key={"fs"+satZoom+"-"+x+"-"+y} src={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${satZoom}/${y}/${x}`} alt="" draggable={false}
                     style={{width:"100%",display:"block",userSelect:"none",background:"#0a1420"}} onError={e=>{e.currentTarget.style.visibility="hidden"}}/>
                 ))}
               </div>
@@ -4273,8 +4248,7 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
               <div style={{position:"absolute",bottom:6,left:14,fontFamily:mono,fontSize:9,color:"rgba(255,255,255,0.6)",textShadow:"0 1px 2px rgba(0,0,0,0.9)",pointerEvents:"none"}}>ZOOM {satZoom} · click outside to close</div>
               <div style={{position:"absolute",bottom:6,right:10,fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.55)",textShadow:"0 1px 2px rgba(0,0,0,0.9)",pointerEvents:"none"}}>Imagery © Esri, Maxar, Earthstar Geographics</div>
             </div>
-          </div>}
-          </>;
+          </div>;
         })()}
         {/* Mine Header */}
         <div style={{padding:"14px 24px 0",borderBottom:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.06)",background:dk?"#0f1b2c":"#fff",flexShrink:0}}>
@@ -4490,6 +4464,33 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
               </div>
               {/* RIGHT COLUMN */}
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                {/* Satellite tile — desktop only, square, opens fullscreen viewer */}
+                {!isMobile&&(()=>{
+                  const lat=profileMine.lat,lng=profileMine.lng;
+                  if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>84)return null;
+                  const z=14,n=Math.pow(2,z);
+                  const xt=(lng+180)/360*n, latR=lat*Math.PI/180;
+                  const yt=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*n;
+                  const xi=Math.floor(xt),yi=Math.floor(yt);
+                  const cols=[xi-1,xi,xi+1].map(x=>((x%n)+n)%n);
+                  const rows=[Math.max(0,yi-1),yi,Math.min(n-1,yi+1)];
+                  return <div onClick={()=>setSatOpen(true)} title="Expand satellite view" style={{position:"relative",aspectRatio:"1/1",borderRadius:4,overflow:"hidden",background:"#0a1420",border:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.06)",cursor:"pointer"}}>
+                    <div style={{position:"absolute",left:"50%",top:"50%",width:"300%",height:"300%",transform:"translate(-50%,-50%)",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gridTemplateRows:"repeat(3,1fr)"}}>
+                      {rows.map(y=>cols.map(x=>
+                        <img key={"sq"+x+"-"+y} src={`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`} alt="" loading="lazy" draggable={false}
+                          style={{width:"100%",height:"100%",objectFit:"cover",display:"block",userSelect:"none"}} onError={e=>{e.currentTarget.style.visibility="hidden"}}/>
+                      ))}
+                    </div>
+                    <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(10,20,32,0.4) 0%,rgba(10,20,32,0) 22%,rgba(10,20,32,0) 70%,rgba(10,20,32,0.5) 100%)",pointerEvents:"none"}}/>
+                    <div style={{position:"absolute",top:8,left:11,display:"flex",alignItems:"center",gap:5,pointerEvents:"none"}}>
+                      <span style={{width:5,height:5,borderRadius:"50%",background:"#e87d3e",boxShadow:"0 0 5px #e87d3e"}}/>
+                      <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:8,fontWeight:700,letterSpacing:"0.1em",color:"rgba(255,255,255,0.9)",textShadow:"0 1px 3px rgba(0,0,0,0.8)"}}>SATELLITE</span>
+                    </div>
+                    <div style={{position:"absolute",top:6,right:8,padding:"3px 8px",borderRadius:3,background:"rgba(10,20,32,0.65)",border:"1px solid rgba(255,255,255,0.2)",fontFamily:"'SF Mono',Consolas,monospace",fontSize:8,fontWeight:700,letterSpacing:"0.06em",color:"rgba(255,255,255,0.9)",backdropFilter:"blur(4px)"}}>EXPAND ⤢</div>
+                    <div style={{position:"absolute",bottom:6,left:11,fontFamily:"'SF Mono',Consolas,monospace",fontSize:8,color:"rgba(255,255,255,0.75)",textShadow:"0 1px 2px rgba(0,0,0,0.85)",pointerEvents:"none"}}>{lat.toFixed(3)}°, {lng.toFixed(3)}°</div>
+                    <div style={{position:"absolute",bottom:5,right:8,fontFamily:"'SF Mono',Consolas,monospace",fontSize:7,color:"rgba(255,255,255,0.5)",textShadow:"0 1px 2px rgba(0,0,0,0.85)",pointerEvents:"none"}}>© Esri, Maxar</div>
+                  </div>;
+                })()}
                 <div style={pnl}>{sh("OWNERSHIP")}
                   {(()=>{const owners=profileMine.company?profileMine.company.split("/").map((o,i,arr)=>({name:o.trim(),pct:i===0?(arr.length===1?100:57.5):i===1?30:i===2?10:2.5})):[{name:"Unknown",pct:100}];const totalPct=owners.reduce((a,o)=>a+o.pct,0);
                   return <div style={{padding:"12px 18px"}}>{owners.map((o,i)=><div key={o.name} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
