@@ -741,11 +741,11 @@ const CTR_MAP={
   // Byrnecut Underground
   "Jundee":["Byrnecut"],"Agnew-Lawlers":["Byrnecut"],"Duketon":["Byrnecut"],"Carosue Dam":["Byrnecut"],
   "Granny Smith":["Byrnecut"],"Gwalia":["Byrnecut"],"Leinster (Nickel West)":["Byrnecut"],"Thunderbox":["Byrnecut"],
-  "Mungari":["Byrnecut"],"South Deep":["Byrnecut"],
+  "Mungari":["Byrnecut"],
   // Barminco / Perenti
-  "Olympic Dam":["Barminco"],"Dugald River":["Barminco"],"Telfer":["Barminco"],"Syama":["Barminco"],
+  "Olympic Dam":["Barminco"],"Dugald River":["Barminco"],"Syama":["Barminco"],
   "Sukari":["Barminco"],"Bulyanhulu":["Barminco"],"Kibali":["Barminco"],"Fekola":["Barminco"],
-  "Hemlo":["Barminco"],"Hemlo":["Barminco"],"Raleigh":["Barminco"],
+  "Hemlo":["Barminco"],"Raleigh":["Barminco"],
   // Redpath Mining
   "Cadia Valley":["Redpath"],"Brucejack":["Redpath"],"Kidd Creek":["Redpath"],"LaRonde":["Redpath"],
   "Canadian Malartic":["Redpath"],"Detour Lake":["Redpath"],"Musselwhite":["Redpath"],
@@ -2842,7 +2842,7 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}}>
           <span style={{fontSize:"10px",fontWeight:600,letterSpacing:"0.08em",color:tc2,fontFamily:"'SF Mono',Consolas,monospace"}}>MINE PROFILE</span>
           <div style={{display:"flex",gap:"4px"}}>
-            <button onClick={()=>toggleWatch(selMine)} title={watchlist.find(w=>w.name===selMine.name)?"Remove from watchlist":"Add to watchlist"} style={{width:22,height:22,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"transparent",color:tc2,border:watchlist.find(w=>w.name===selMine.name)?"1px solid rgba(232,125,62,0.4)":(dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.08)"),borderRadius:3,cursor:"pointer",padding:0,color:watchlist.find(w=>w.name===selMine.name)?"#e87d3e":tc2}}><svg width="11" height="11" viewBox="0 0 24 24" fill={watchlist.find(w=>w.name===selMine.name)?"currentColor":"none"} stroke="currentColor" strokeWidth="1.6"><path d="m12 3 2.6 5.6 6.1.6-4.6 4.2 1.3 6.1L12 16.6 6.6 19.5l1.3-6.1L3.3 9.2l6.1-.6z"/></svg></button>
+            <button onClick={()=>toggleWatch(selMine)} title={watchlist.find(w=>w.name===selMine.name)?"Remove from watchlist":"Add to watchlist"} style={{width:22,height:22,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"transparent",border:watchlist.find(w=>w.name===selMine.name)?"1px solid rgba(232,125,62,0.4)":(dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.08)"),borderRadius:3,cursor:"pointer",padding:0,color:watchlist.find(w=>w.name===selMine.name)?"#e87d3e":tc2}}><svg width="11" height="11" viewBox="0 0 24 24" fill={watchlist.find(w=>w.name===selMine.name)?"currentColor":"none"} stroke="currentColor" strokeWidth="1.6"><path d="m12 3 2.6 5.6 6.1.6-4.6 4.2 1.3 6.1L12 16.6 6.6 19.5l1.3-6.1L3.3 9.2l6.1-.6z"/></svg></button>
             <button onClick={()=>{setProfileMine(selMine);setProfileTab("overview");setDetail(false)}} title="Open full profile" style={{width:22,height:22,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"transparent",color:tc2,border:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.08)",borderRadius:3,cursor:"pointer",padding:0}}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
             <button onClick={clearSelection} title="Close" style={{width:22,height:22,display:"inline-flex",alignItems:"center",justifyContent:"center",background:"transparent",color:tc2,border:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.08)",borderRadius:3,cursor:"pointer",padding:0}}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
           </div>
@@ -4473,118 +4473,8 @@ useEffect(()=>{viewModeRef.current=viewMode;},[viewMode]);
             </div>
           </div>;
         })()}
-        {/* -- INFO TABLE: two-column label/value rows -- */}
-        <div style={{padding:"4px 0"}}>
-          {[
-            {l:"Owner",v:selMine.company},
-            {l:"Type",v:selMine.type},
-            {l:"Method",v:selMine.method},
-            {l:"Status",v:selMine.status},
-            MINE_PORT[selMine.name]?{l:"Export Port",v:MINE_PORT[selMine.name]}:null,
-            selMine.pr_ore_tpa?{l:"Throughput",v:((mt)=>((mt>=1?(mt%1===0?mt.toFixed(0):mt.toFixed(1)):mt.toFixed(2))+" Mt/y"))(selMine.pr_ore_tpa/1e6)}:null,
-            selMine.grade?{l:"Ore Grade",v:selMine.grade}:null,
-            selMine.revenue?{l:"Est. Revenue",v:selMine.revenue}:null,
-            selMine.employees?{l:"Employees",v:selMine.employees}:null,
-            selMine.depth?{l:"Depth",v:selMine.depth}:null,
-            selMine.reserves?{l:"Reserves",v:selMine.reserves}:null,
-            selMine.discovered?{l:"Discovered",v:String(selMine.discovered)}:null,
-            {l:"Opened",v:selMine.opened?String(selMine.opened):"In Development"},
-            {l:"Location",v:(selMine.state||"")+(selMine.region?" · "+selMine.region:"")},
-            {l:"Coordinates",v:selMine.lat.toFixed(3)+"°, "+selMine.lng.toFixed(3)+"°"},
-          ].filter(Boolean).filter(r=>r.v).map(({l,v},i)=>(
-            <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",padding:"7px 16px",borderBottom:dk?"1px solid rgba(255,255,255,0.03)":"1px solid rgba(0,0,0,0.04)",background:i%2===0?"transparent":(dk?"rgba(255,255,255,0.015)":"rgba(0,0,0,0.015)")}}>
-              <span style={{fontSize:"11px",color:tc2,fontWeight:500,flexShrink:0,marginRight:"12px"}}>{l}</span>
-              <span style={{fontSize:"12px",color:tc,fontWeight:500,textAlign:"right",wordBreak:"break-word"}}>{v}</span>
-            </div>))}
-        </div>
-        {/* -- GOVERNANCE RISK (when layer active) -- */}
-        {layers.governance&&GOV[selMine.country]&&(()=>{
-          const g=GOV[selMine.country];
-          return <div style={{padding:"8px 16px",borderBottom:dk?"1px solid rgba(255,255,255,0.04)":"1px solid rgba(0,0,0,0.06)"}}>
-            <div style={{fontSize:"8px",letterSpacing:"1.5px",color:"#f59e0b",fontWeight:600,marginBottom:"6px"}}>GOVERNANCE RISK</div>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
-              <span style={{fontSize:"16px",fontFamily:"'SF Mono',Consolas,monospace",fontWeight:700,color:govColor(g.reg),background:govColor(g.reg)+"18",padding:"2px 10px",borderRadius:"6px",border:"1px solid "+govColor(g.reg)+"33"}}>{g.reg}</span>
-              <div>
-                <div style={{fontSize:"12px",fontWeight:600,color:tc}}>{govLabel(g.reg)}</div>
-                <div style={{fontSize:"10px",color:tc2}}>CPI Score: {g.cpi}/100</div>
-              </div>
-            </div>
-            <div style={{fontSize:"10px",color:tc2,lineHeight:1.4}}>{g.notes}</div>
-          </div>;
-        })()}
-        {/* -- COUNTRY INFO -- */}
-        {COUNTRY_INFO[selMine.country]&&(()=>{
-          const ci=COUNTRY_INFO[selMine.country];
-          return <div style={{padding:"8px 16px",borderBottom:dk?"1px solid rgba(255,255,255,0.04)":"1px solid rgba(0,0,0,0.06)"}}>
-            <div style={{fontSize:"8px",letterSpacing:"1.5px",color:"#60a5fa",fontWeight:600,marginBottom:"6px"}}>{selMine.country.toUpperCase()}</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 12px",fontSize:"10px"}}>
-              <div><span style={{color:tc2,opacity:0.6}}>Pop: </span><span style={{color:tc}}>{ci.pop}</span></div>
-              <div><span style={{color:tc2,opacity:0.6}}>GDP: </span><span style={{color:tc}}>{ci.gdp}</span></div>
-              <div><span style={{color:tc2,opacity:0.6}}>Mining: </span><span style={{color:tc}}>{ci.mining}</span></div>
-              <div><span style={{color:tc2,opacity:0.6}}>Currency: </span><span style={{color:tc}}>{ci.currency}</span></div>
-            </div>
-            <div style={{fontSize:"10px",color:tc2,marginTop:"4px"}}><span style={{opacity:0.6}}>Top commodities: </span>{ci.topCom}</div>
-          </div>;
-        })()}
-        
-          {/* PROJECT INFO */}
-          {selMine.capex&&<div style={{marginTop:"8px",padding:"8px",borderRadius:"6px",background:dk?"rgba(245,158,11,0.1)":"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)"}}>
-            <div style={{fontSize:"9px",fontWeight:600,color:"#f59e0b",marginBottom:"6px",letterSpacing:"0.08em",fontFamily:"'SF Mono',Consolas,monospace"}}>PROJECT INFO</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",fontSize:"10px"}}>
-              <div><span style={{color:tc,opacity:0.5}}>Stage:</span> <span style={{color:tc}}>{selMine.stage}</span></div>
-              <div><span style={{color:tc,opacity:0.5}}>Capex:</span> <span style={{color:"#f59e0b",fontWeight:600}}>{selMine.capex}</span></div>
-              <div><span style={{color:tc,opacity:0.5}}>First Prod:</span> <span style={{color:tc}}>{selMine.fpDate||"TBD"}</span></div>
-              {selMine.parent&&<div><span style={{color:tc,opacity:0.5}}>Expansion of:</span> <span style={{color:"#e87d3e"}}>{selMine.parent}</span></div>}
-            </div>
-          </div>}
-          {/* EXPANSION PROJECTS AT THIS MINE */}
-          {(()=>{const exps=MINES.filter(p=>p.parent===selMine.name);return exps.length>0?(
-            <div style={{marginTop:"8px",padding:"8px",borderRadius:"6px",background:dk?"rgba(245,158,11,0.1)":"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)"}}>
-              <div style={{fontSize:"9px",fontWeight:600,color:"#f59e0b",marginBottom:"6px",letterSpacing:"0.08em",fontFamily:"'SF Mono',Consolas,monospace"}}>EXPANSION PROJECTS</div>
-              {exps.map(exp=>(
-                <div key={exp.name} onClick={()=>setSelMine(exp)} style={{cursor:"pointer",padding:"4px 6px",marginBottom:"4px",borderRadius:"4px",background:dk?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.03)",fontSize:"10px"}}>
-                  <div style={{fontWeight:600,color:"#f59e0b"}}>{exp.name}</div>
-                  <div style={{color:tc,opacity:0.7}}>{exp.status} · {exp.capex} · First prod: {exp.fpDate||"TBD"}</div>
-                </div>
-              ))}
-            </div>
-          ):null})()}
-{/* -- NEARBY MINES -- */}
-        {(()=>{
-          const R_EARTH=6371;
-          const toRad=d=>d*Math.PI/180;
-          const dist=(la1,ln1,la2,ln2)=>{const dLa=toRad(la2-la1),dLn=toRad(ln2-ln1),a=Math.sin(dLa/2)**2+Math.cos(toRad(la1))*Math.cos(toRad(la2))*Math.sin(dLn/2)**2;return R_EARTH*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))};
-          const nearby=MINES.filter(m=>m.name!==selMine.name).map(m=>({...m,km:Math.round(dist(selMine.lat,selMine.lng,m.lat,m.lng))})).filter(m=>m.km<=200).sort((a,b)=>a.km-b.km).slice(0,5);
-          if(!nearby.length)return null;
-          return <div style={{padding:"8px 16px",borderBottom:dk?"1px solid rgba(255,255,255,0.04)":"1px solid rgba(0,0,0,0.06)"}}>
-            <div style={{fontSize:"9px",letterSpacing:"0.08em",color:tc2,fontWeight:600,marginBottom:"6px",fontFamily:"'SF Mono',Consolas,monospace"}}>NEARBY · WITHIN 200KM</div>
-            {nearby.map(m=><div key={m.name} onClick={()=>{selectMine(m);focusMine(m)}} style={{display:"flex",alignItems:"center",gap:"8px",padding:"4px 0",cursor:"pointer",fontSize:"10px"}}>
-              <div style={{width:"6px",height:"6px",borderRadius:"50%",background:getCC(m.commodity),flexShrink:0}}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{color:tc,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.name}</div>
-                <div style={{color:tc2,opacity:0.6,fontSize:"9px"}}>{m.commodity.join(", ")} · {m.company}</div>
-              </div>
-              <span style={{fontSize:"9px",color:tc2,opacity:0.5,fontFamily:"'SF Mono',Consolas,monospace",flexShrink:0}}>{m.km}km</span>
-            </div>)}
-          </div>;
-        })()}
-        {/* -- DATA QUALITY badges -- */}
-        {(()=>{const raw=M.find(x=>x.n===selMine.name);if(!raw)return null;const dq=raw.dq;const conf=raw.confidence;if(!dq&&!conf)return null;const dqColor=dq==="A"?"#4CAF50":dq==="B"?"#FF9800":"#F44336";const confColor=conf==="High"?"#4CAF50":conf==="Medium"?"#FF9800":"#F44336";return <div style={{padding:"8px 16px",display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}>
-          {dq&&<span style={{fontSize:"9px",padding:"3px 8px",borderRadius:"4px",background:dqColor+"18",color:dqColor,border:"1px solid "+dqColor+"33",fontWeight:600}}>Data: {dq==="A"?"Production + Reserves":dq==="B"?"Production only":"Limited"}</span>}
-          {conf&&<span style={{fontSize:"9px",padding:"3px 8px",borderRadius:"4px",background:confColor+"18",color:confColor,border:"1px solid "+confColor+"33",fontWeight:600}}>{conf} confidence</span>}
-        </div>})()}
-        {/* -- NOTES -- */}
-        {selMine.notes&&(<div style={{margin:"4px 16px 12px",padding:"10px 12px",background:"rgba(232,125,62,0.06)",borderRadius:"8px",borderLeft:"3px solid #e87d3e"}}>
-          <div style={{fontSize:"8px",letterSpacing:"1.5px",color:"#e87d3e",fontWeight:600,marginBottom:"4px"}}>NOTABLE</div>
-          <div style={{fontSize:"11px",color:tc2,lineHeight:1.5}}>{selMine.notes}</div>
-        </div>)}
       </div>
-      {/* Bottom action buttons */}
-      <div style={{padding:"10px 14px",borderTop:dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.06)",display:"flex",gap:"6px",flexShrink:0}}>
-        <button onClick={()=>{setProfileMine(selMine);setProfileTab("overview");setDetail(false)}} style={{flex:1,padding:"8px",background:"#e87d3e",color:dk?"#0f1926":"#fff",border:"none",borderRadius:"4px",fontFamily:"'SF Mono',Consolas,monospace",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",cursor:"pointer"}}>OPEN PROFILE →</button>
-        <button onClick={()=>addToCompare(selMine)} style={{flex:0.6,padding:"8px",background:compareList.find(m=>m.name===selMine.name)?"rgba(98,178,137,0.15)":"transparent",color:compareList.find(m=>m.name===selMine.name)?"#62b289":tc2,border:compareList.find(m=>m.name===selMine.name)?"1px solid rgba(98,178,137,0.3)":(dk?"1px solid rgba(110,150,200,0.10)":"1px solid rgba(0,0,0,0.08)"),borderRadius:"4px",fontFamily:"'SF Mono',Consolas,monospace",fontSize:"10px",fontWeight:600,letterSpacing:"0.06em",cursor:"pointer"}}>{compareList.find(m=>m.name===selMine.name)?"✓ ADDED":"+ COMPARE"}</button>
-      </div>
-    </div>)}
+    )}
     {/* ======================================= */}
     {/* COMPARE TRAY - floating bottom bar    */}
     {/* ======================================= */}
